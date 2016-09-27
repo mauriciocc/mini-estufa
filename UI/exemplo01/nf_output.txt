@@ -1,0 +1,11 @@
+WALVATES IND E COM DE SOFTWARE S/A
+Rua Sem Nome, 123, Bairro Teste
+CNPJ: 74.410.743/0001-76
+---------------------------------
+20.00 +
+5.00 
+5.00 -
+2.00 *
+10.00 % Desconto
+---------------------------------
+TOTAL: R$ 36.00

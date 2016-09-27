@@ -1,0 +1,2 @@
+Configuração da porta serial é feita no arquivo: Balance.cpp
+Cupom fiscal é gerado na pasta do programa, nome do arquivo: nf_output.txt
