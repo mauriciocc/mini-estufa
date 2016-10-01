@@ -7,6 +7,7 @@
 #define FAN     46
 
 // Value Sampling
+#define T_SAMPLE 100
 #define SAMPLES 10
 
 
@@ -19,6 +20,7 @@ typedef struct ControlStruct {
   long unsigned lastRead;
   int sampleCount;
   int sampleTemp;
+  unsigned char currentPwm;
 } ControlStruct;
 
 typedef struct Range {
