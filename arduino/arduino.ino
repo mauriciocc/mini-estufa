@@ -6,8 +6,8 @@ char selectedPlant = ASPLENIO;
 
 struct Plant plants[7];
 
-struct ControlStruct temp = {LM35, 0, -999, 999, 0, 0, 0};
-struct ControlStruct light = {LDR, 0, -999, 999, 0, 0, 0};
+struct ControlStruct temp = {LM35, 0, -999, 999, 0, 0, 0, 0};
+struct ControlStruct light = {LDR, 0, -999, 999, 0, 0, 0, 0};
 
 
 void setup() {  
@@ -24,6 +24,19 @@ void setup() {
   plants[MINI_SAMAMBAIA]  = {{22, 25}, {20000, 22000}};
 }
 
+
+int toLux(int rawReading){  
+  /*
+   * VS = (5*1k)/(Rx+1k)
+   */
+  return rawReading;
+  /*double Vstep = (5.0/1024.0);
+  double Vs = Vstep * (double)rawReading;
+  double Rx = 5000/1000*Vs;
+  int lux = 500.0/Rx;
+  return lux;*/
+}
+
 void maxMin(struct ControlStruct* ctrlStruct) {
     int val = ctrlStruct->value;
     int maxVal = ctrlStruct->maxVal;
@@ -38,8 +51,15 @@ void maxMin(struct ControlStruct* ctrlStruct) {
     } 
 }
 
+boolean isAboveLimit(int val, struct Range* limit) {
+  return val > limit->maxVal;
+}
+
 void temperatureSensor(unsigned long cTime) {
-  if((cTime - temp.lastRead) > 100) { 
+  if((cTime - temp.lastRead) > T_SAMPLE) { 
+    /*Serial.print(" LM35 - : ");
+    Serial.println(analogRead(LM35),DEC);    */
+    
     temp.sampleTemp += ( 5.0 * analogRead(LM35) * 100.0) / 1024.0;
     temp.sampleCount++;
     temp.lastRead = cTime;
@@ -59,14 +79,22 @@ void temperatureSensor(unsigned long cTime) {
     Serial.print(temp.minVal,DEC);
     Serial.print("  Max: ");
     Serial.println(temp.maxVal,DEC);    
-    analogWrite(FAN, 255); 
+      
+    if(isAboveLimit(temp.value, &(plants[selectedPlant].temp))) {
+      analogWrite(FAN, 255); 
+    } else {
+      analogWrite(FAN, 0); 
+    }
+    
   }
 }
 
 
 void lightSensor(unsigned long cTime) {
-  if((cTime - light.lastRead) > 100) { 
-    light.sampleTemp += analogRead(LDR);
+  if((cTime - light.lastRead) > T_SAMPLE) { 
+    /*Serial.print(" LDR - : ");
+    Serial.println(analogRead(LDR),DEC);*/
+    light.sampleTemp += toLux(analogRead(LDR));
     light.sampleCount++;
     light.lastRead = cTime;    
   }
@@ -80,7 +108,7 @@ void lightSensor(unsigned long cTime) {
     light.sampleTemp = 0;
     
     Serial.print(light.value,DEC);
-    Serial.print(" LDR, ");
+    Serial.print(" Lux, ");
     Serial.print(" Min : ");
     Serial.print(light.minVal,DEC);
     Serial.print("  Max: ");
