@@ -14,7 +14,7 @@
     <ProjectGuid>{AF0BACE5-FB50-4B3C-95D8-7805EC8E62E6}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>exemplo01</RootNamespace>
-    <ProjectName>calculadora</ProjectName>
+    <ProjectName>ui_mini_estufa</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -80,27 +80,17 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Balance.h" />
-    <ClInclude Include="Calc.h" />
-    <ClInclude Include="CalcCtrl.h" />
-    <ClInclude Include="exemplo01.h" />
-    <ClInclude Include="Nf.h" />
+    <ClInclude Include="ui_mini_estufa.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="StrUtils.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Balance.cpp" />
-    <ClCompile Include="Calc.cpp" />
-    <ClCompile Include="CalcCtrl.cpp" />
-    <ClCompile Include="exemplo01.cpp" />
-    <ClCompile Include="Nf.cpp" />
+    <ClCompile Include="ui_mini_estufa.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="StrUtils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="exemplo01.rc" />

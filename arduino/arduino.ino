@@ -1,40 +1,40 @@
-// Reads
-#define LM35    1
-#define LDR     2
-
-// Writes
-#define LED     44 
-#define FAN     46
-
-#define SAMPLES 10
-
-typedef struct ControlStruct {
-  char sensor;
-  int value;  
-  int maxVal;
-  int minVal;
-  long unsigned lastRead;
-  int sampleCount;
-  int sampleTemp;
-} ControlStruct;
+#include "data_structures.h"
+#include "protocol.h"
 
 
+char selectedPlant = ASPLENIO;
+
+struct Plant plants[7];
 
 struct ControlStruct temp = {LM35, 0, -999, 999, 0, 0, 0};
 struct ControlStruct light = {LDR, 0, -999, 999, 0, 0, 0};
 
-void setup() {
+
+void setup() {  
   Serial.begin(9600);
   pinMode(LED, OUTPUT);
   pinMode(FAN, OUTPUT);
+
+  plants[ASPLENIO]        = {{18, 22}, {30000, 32000}};
+  plants[AZALEIA]         = {{16, 19}, {20000, 22000}};
+  plants[BROMELIA]        = {{22, 25}, {21000, 25000}};
+  plants[CAMEDOREA]       = {{26, 28}, {15000, 17000}};
+  plants[CAMELIA]         = {{27, 29}, {20000, 23000}};
+  plants[DRACENAS]        = {{22, 25}, {24000, 26000}};
+  plants[MINI_SAMAMBAIA]  = {{22, 25}, {20000, 22000}};
 }
 
 void maxMin(struct ControlStruct* ctrlStruct) {
-    if(ctrlStruct->value > ctrlStruct->maxVal) {
-      ctrlStruct->maxVal = ctrlStruct->value;
+    int val = ctrlStruct->value;
+    int maxVal = ctrlStruct->maxVal;
+    
+    if(val > maxVal) {
+      ctrlStruct->maxVal = val;
     }   
-    if(ctrlStruct->value < ctrlStruct->minVal) {
-      ctrlStruct->minVal = ctrlStruct->value;
+
+    int minVal = ctrlStruct->minVal;
+    if(val < minVal) {
+      ctrlStruct->minVal = val;
     } 
 }
 
@@ -91,10 +91,7 @@ void lightSensor(unsigned long cTime) {
 }
 
 void loop() {
-  unsigned long cTime = millis();
-  
+  unsigned long cTime = millis();  
   temperatureSensor(cTime);
-  lightSensor(cTime);  
-  
-
+  lightSensor(cTime);
 }

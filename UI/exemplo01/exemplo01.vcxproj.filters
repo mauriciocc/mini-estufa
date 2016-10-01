@@ -13,12 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Source Files\classes">
-      <UniqueIdentifier>{aaaf7c7b-a32b-49b1-b2ab-b6e7f6d83c44}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\classes">
-      <UniqueIdentifier>{1a8da945-5a1e-41b8-a177-9bd9299083ed}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -33,46 +27,16 @@
     <ClInclude Include="Resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="exemplo01.h">
+    <ClInclude Include="ui_mini_estufa.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Balance.h">
-      <Filter>Header Files\classes</Filter>
-    </ClInclude>
-    <ClInclude Include="Calc.h">
-      <Filter>Header Files\classes</Filter>
-    </ClInclude>
-    <ClInclude Include="CalcCtrl.h">
-      <Filter>Header Files\classes</Filter>
-    </ClInclude>
-    <ClInclude Include="StrUtils.h">
-      <Filter>Header Files\classes</Filter>
-    </ClInclude>
-    <ClInclude Include="Nf.h">
-      <Filter>Header Files\classes</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="exemplo01.cpp">
+    <ClCompile Include="ui_mini_estufa.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Calc.cpp">
-      <Filter>Source Files\classes</Filter>
-    </ClCompile>
-    <ClCompile Include="CalcCtrl.cpp">
-      <Filter>Source Files\classes</Filter>
-    </ClCompile>
-    <ClCompile Include="StrUtils.cpp">
-      <Filter>Source Files\classes</Filter>
-    </ClCompile>
-    <ClCompile Include="Nf.cpp">
-      <Filter>Source Files\classes</Filter>
-    </ClCompile>
-    <ClCompile Include="Balance.cpp">
-      <Filter>Source Files\classes</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
