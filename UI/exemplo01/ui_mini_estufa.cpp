@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "ui_mini_estufa.h"
+#include "Protocol.h"
 
 #define MAX_LOADSTRING 100
 
@@ -122,10 +123,33 @@ INT_PTR CALLBACK PrincipalProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		
 	switch(message) {
 	
-		case WM_INITDIALOG:
+		case WM_INITDIALOG: {
 			break;
-		case WM_COMMAND: {			
+		}
+		case WM_COMMAND: {						
 			int event_type = HIWORD(wParam);
+			if(event_type == BN_CLICKED) {
+				int event_id = LOWORD(wParam);
+				if(event_id == B_ASPLENIO) {
+					HWND btn = GetDlgItem(hDlg, B_ASPLENIO);
+					EnableWindow(btn, FALSE);
+				} else if(event_id == B_APPLY_TIME) {
+					char date[32];
+					GetDlgItemTextA(hDlg, F_DATE, date, 31);
+					char time[32];
+					GetDlgItemTextA(hDlg, F_TIME, date, 31);
+					char result[128];
+					strcat(result, date);
+					strcat(result, " ");
+					strcat(result, time);		
+					int day, month, year, hour, min, sec;
+					sscanf(result, "%d/%d/%d %d:%d:%d", &day, &month, &year, &hour, &min, &sec);
+					day + 1 ;
+				}
+			}
+
+			int i = protocolReadTemp("COM1");
+
 			break;
 		}
 		case WM_CLOSE:

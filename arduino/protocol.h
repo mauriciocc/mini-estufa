@@ -7,4 +7,3 @@
 #define PROT_T_STATUS   8
 #define PROT_T_TIME     16
 #define PROT_T_HISTORY  64
-
