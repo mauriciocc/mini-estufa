@@ -6,12 +6,16 @@ char selectedPlant = ASPLENIO;
 
 struct Plant plants[7];
 
-struct ControlStruct temp = {LM35, 0, -999, 999, 0, 0, 0, 0};
+struct ControlStruct temp = {LM35, 0, 0, 999, 0, 0, 0, 0};
 struct ControlStruct light = {LDR, 0, -999, 999, 0, 0, 0, 0};
 
+const unsigned char PWM_DUTY[] = {0, 20, 51, 80, 100, 127, 142, 168, 192, 215, 255};
 
 void setup() {  
   Serial.begin(9600);
+  pinMode(LM35, INPUT);
+  pinMode(LDR, INPUT);
+  
   pinMode(LED, OUTPUT);
   pinMode(FAN, OUTPUT);
 
@@ -29,12 +33,12 @@ int toLux(int rawReading){
   /*
    * VS = (5*1k)/(Rx+1k)
    */
-  return rawReading;
-  /*double Vstep = (5.0/1024.0);
+  rawReading = 1023 - rawReading; //return rawReading;
+  double Vstep = (5.0/1024.0);
   double Vs = Vstep * (double)rawReading;
   double Rx = 5000/1000*Vs;
-  int lux = 500.0/Rx;
-  return lux;*/
+  unsigned int lux = (500.0/Rx)*1000;
+  return lux*250;
 }
 
 void maxMin(struct ControlStruct* ctrlStruct) {
@@ -53,6 +57,24 @@ void maxMin(struct ControlStruct* ctrlStruct) {
 
 boolean isAboveLimit(int val, struct Range* limit) {
   return val > limit->maxVal;
+}
+
+boolean isBelowLimit(int val, struct Range* limit) {
+  return val < limit->minVal;
+}
+
+void adjustPwm(char pin, boolean condition, struct ControlStruct* ctrlStruct) {
+  unsigned char currentPwm = ctrlStruct->currentPwm;
+  if(condition) {
+      if(currentPwm < PWM_DUTY_MODES) {
+        ctrlStruct->currentPwm++;        
+      }
+  } else {
+    if(currentPwm > 0) {
+        ctrlStruct->currentPwm--;
+    }
+  }
+  analogWrite(pin, PWM_DUTY[ctrlStruct->currentPwm]); 
 }
 
 void temperatureSensor(unsigned long cTime) {
@@ -75,20 +97,26 @@ void temperatureSensor(unsigned long cTime) {
     
     Serial.print(temp.value,DEC);
     Serial.print(" C, ");
+    Serial.print("  Stage: ");
+    Serial.print(temp.currentPwm,DEC);
     Serial.print(" Min : ");
     Serial.print(temp.minVal,DEC);
     Serial.print("  Max: ");
     Serial.println(temp.maxVal,DEC);    
-      
-    if(isAboveLimit(temp.value, &(plants[selectedPlant].temp))) {
+
+    adjustPwm(
+      FAN,
+      isAboveLimit(temp.value, &(plants[selectedPlant].temp)),
+      &temp
+    );
+    /*if(isAboveLimit(temp.value, &(plants[selectedPlant].temp))) {
       analogWrite(FAN, 255); 
     } else {
       analogWrite(FAN, 0); 
-    }
+    }*/
     
   }
 }
-
 
 void lightSensor(unsigned long cTime) {
   if((cTime - light.lastRead) > T_SAMPLE) { 
@@ -109,12 +137,30 @@ void lightSensor(unsigned long cTime) {
     
     Serial.print(light.value,DEC);
     Serial.print(" Lux, ");
+    Serial.print("  Stage: ");
+    Serial.print(light.currentPwm,DEC);
     Serial.print(" Min : ");
     Serial.print(light.minVal,DEC);
     Serial.print("  Max: ");
     Serial.println(light.maxVal,DEC);     
-    
-    analogWrite(LED, (255 - light.value));
+
+
+    adjustPwm(
+      LED,
+      isBelowLimit(light.value, &(plants[selectedPlant].lux)),
+      &light
+    );
+    /*if(isBelowLimit(light.value, &(plants[selectedPlant].lux))) {
+      if(light.currentPwm < PWM_DUTY_MODES) {
+        light.currentPwm++;
+        analogWrite(LED, PWM_DUTY[light.currentPwm]); 
+      }
+    } else {
+      if(light.currentPwm > 0) {
+        light.currentPwm--;
+        analogWrite(LED, PWM_DUTY[light.currentPwm]); 
+      }
+    }*/
   }
 }
 

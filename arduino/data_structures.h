@@ -7,19 +7,21 @@
 #define FAN     46
 
 // Value Sampling
-#define T_SAMPLE 100
-#define SAMPLES 10
+#define T_SAMPLE 50
+#define SAMPLES 20
+
+#define PWM_DUTY_MODES 9
 
 
 // Data Structures
 typedef struct ControlStruct {
   char sensor;
-  int value;  
+  unsigned int value;  
   int maxVal;
   int minVal;
   long unsigned lastRead;
   int sampleCount;
-  int sampleTemp;
+  unsigned long sampleTemp;
   unsigned char currentPwm;
 } ControlStruct;
 
