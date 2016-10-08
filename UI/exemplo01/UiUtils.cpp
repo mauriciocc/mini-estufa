@@ -2,6 +2,8 @@
 #include "resource.h"
 #include "UiUtils.h"
 
+
+
 char* retrieveDateTime(HWND hwnd) {
 	char date[32] = {0};					
 	GetDlgItemTextA(hwnd, F_DATE, date, 30);
