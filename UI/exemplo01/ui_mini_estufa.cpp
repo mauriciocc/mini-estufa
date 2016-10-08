@@ -134,17 +134,13 @@ INT_PTR CALLBACK PrincipalProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					HWND btn = GetDlgItem(hDlg, B_ASPLENIO);
 					EnableWindow(btn, FALSE);
 				} else if(event_id == B_APPLY_TIME) {
-					char date[32];
-					GetDlgItemTextA(hDlg, F_DATE, date, 31);
-					char time[32];
-					GetDlgItemTextA(hDlg, F_TIME, date, 31);
-					char result[128];
-					strcat(result, date);
-					strcat(result, " ");
-					strcat(result, time);		
-					int day, month, year, hour, min, sec;
-					sscanf(result, "%d/%d/%d %d:%d:%d", &day, &month, &year, &hour, &min, &sec);
-					day + 1 ;
+					char* result = retrieveDateTime(hDlg);													
+					tm* timeStruct = parseDate(result);
+
+					free(result);
+					free(timeStruct);
+					
+					return TRUE;
 				}
 			}
 
