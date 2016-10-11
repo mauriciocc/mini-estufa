@@ -8,7 +8,11 @@
 #define PROT_T_TIME     16
 #define PROT_T_HISTORY  64
 
-typedef struct Message {
-  
-} Message;
+typedef struct ProtocolData {
+  char header;
+  char type;
+  unsigned short size;
+  char* data;
+  unsigned short checksum;
+} ProtocolData;
 

@@ -124,16 +124,24 @@ INT_PTR CALLBACK PrincipalProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	switch(message) {
 	
 		case WM_INITDIALOG: {
+			CheckDlgButton(hDlg, RB_ASPLENIO, 1);
+			SetDlgItemText(hDlg, F_COM, _T("COM1"));
 			break;
 		}
 		case WM_COMMAND: {						
 			int event_type = HIWORD(wParam);
 			if(event_type == BN_CLICKED) {
 				int event_id = LOWORD(wParam);
-				if(event_id == B_ASPLENIO) {
-					HWND btn = GetDlgItem(hDlg, B_ASPLENIO);
-					EnableWindow(btn, FALSE);
-				} else if(event_id == B_APPLY_TIME) {
+
+				if(processSelectEvent(event_id)) {
+					return true;
+				} else if(event_id == B_READ_SENSORS) {
+					char* port = (char*) malloc(32);
+					GetDlgItemTextA(hDlg, F_COM, port, 31);
+					int i = protocolReadTemp(port);
+					free(port);
+					return true;
+				} else if(event_id == B_APPLY_TIME) { 
 					char* result = retrieveDateTime(hDlg);													
 					tm* timeStruct = parseDate(result);
 
@@ -142,9 +150,7 @@ INT_PTR CALLBACK PrincipalProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					
 					return TRUE;
 				}
-			}
-
-			int i = protocolReadTemp("COM1");
+			}		
 
 			break;
 		}

@@ -22,6 +22,7 @@ char readKey;
 
 void setup() {  
 
+  int EEPROM_APP_ID_IDX = EEPROM.length() - 1 ;
   // Limpa EEPROM caso não seja identificada app, limpa memória
   if(EEPROM.read(EEPROM_APP_ID_IDX) != APP_ID) {
     for (int i = 0 ; i < EEPROM.length() ; i++) {
@@ -30,17 +31,18 @@ void setup() {
     EEPROM.write(EEPROM_APP_ID_IDX, APP_ID);
   }
   
-  Serial.begin(9600);
+  Serial.begin(9600, SERIAL_8N1);
   while (!Serial);
   randomSeed(millis());
     
   appClock.lastUpdate = millis();
-  
+
   pinMode(LM35, INPUT);
   pinMode(LDR, INPUT);
   
   pinMode(LED, OUTPUT);
   pinMode(FAN, OUTPUT);
+  pinMode(13, OUTPUT);
 
   plants[ASPLENIO]        = {{18, 22}, {30000, 32000}, "Asplenio"};
   plants[AZALEIA]         = {{16, 19}, {20000, 22000}, "Azaleia"};
@@ -53,8 +55,6 @@ void setup() {
   lcd.begin(16, 2);
   lcd.clear();
   
-  //appClock.h = EEPROM.read(EEPROM_CLOCK_H);
-  //appClock.m = EEPROM.read(EEPROM_CLOCK_M);
 }
 
 boolean systemNeedToOperate() {
@@ -130,7 +130,7 @@ void temperatureSensor(unsigned long cTime) {
   }
 
   if(temp.sampleCount == SAMPLES) {
-    temp.value = temp.sampleTemp/(SAMPLES+1);
+    temp.value = temp.sampleTemp/(SAMPLES);
 
     maxMin(&temp);
     
@@ -161,7 +161,7 @@ void lightSensor(unsigned long cTime) {
   }
 
   if(light.sampleCount == SAMPLES) {
-    light.value = light.sampleTemp/(SAMPLES+1);
+    light.value = (light.sampleTemp/(SAMPLES))*1000*250;
 
     maxMin(&light);
     
@@ -278,14 +278,50 @@ void nextPlant() {
     selectedPlant = 0;
   }
 }
+
+int received=0;
+ProtocolData protoData;
+boolean entered = false;
 void loop() {
+  
   unsigned long cTime = millis();  
-  updateClock(cTime);
+  /*updateClock(cTime);
   temperatureSensor(cTime);
   lightSensor(cTime);
-  refreshLCD(cTime);
-  
-  switch(readKeyboard(cTime)) {
+  refreshLCD(cTime);*/
+
+   // send data only when you receive data:
+   
+        if (!entered && Serial.available() >= 4) {
+          protoData.header = Serial.read();
+          protoData.type = Serial.read();
+          protoData.size = Serial.read();
+          protoData.size = (Serial.read() << 8) | protoData.size; 
+          if(protoData.size > 0) {
+            char* content = (char*) malloc(protoData.size);
+            for(int i = 0; i < protoData.size; i++) {
+              content[i] = Serial.read(); 
+            }
+            protoData.data = content;
+          }
+          protoData.checksum = Serial.read();
+          protoData.checksum = (Serial.read() << 8) | protoData.checksum;
+          entered = true;
+        }
+
+//strcmp(protoData.data, "Hello World!")
+          if(protoData.header == PROT_READ && protoData.type == PROT_T_TEMP && protoData.size == 12) {
+            digitalWrite(13, HIGH);
+          }          
+        delay(2000);
+        digitalWrite(13, LOW);
+
+        Serial.println(protoData.header, DEC);
+        Serial.println(protoData.type, DEC);
+        Serial.println(protoData.size, DEC);
+        Serial.println(protoData.data);
+                Serial.println(protoData.checksum, DEC);
+ /* switch(readKeyboard(cTime)) {
     case SELECT: {
       nextPlant();
       break;
@@ -306,5 +342,5 @@ void loop() {
       decrementMinute();      
       break;
     }
-  }
+  }*/
 }

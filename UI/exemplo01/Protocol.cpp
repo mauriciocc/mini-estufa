@@ -3,8 +3,8 @@
 
 HANDLE openPort(char* port) {
 
-  HANDLE hComm = CreateFile(
-					(LPCTSTR) port, 
+  HANDLE hComm = CreateFileA(
+					  port, 
 					  GENERIC_READ | GENERIC_WRITE, //Read
                       0,                            // No Sharing
                       NULL,                         // No Security
@@ -13,7 +13,7 @@ HANDLE openPort(char* port) {
                       NULL);        // Null for Comm Devices
 
   if (hComm == INVALID_HANDLE_VALUE){
-      //return NULL;
+      return NULL;
   }
 
 	DCB dcb;		
@@ -24,15 +24,17 @@ HANDLE openPort(char* port) {
 	dcb.BaudRate = CBR_9600;
 	dcb.ByteSize = 8;         
 	dcb.Parity   = NOPARITY; 
-	dcb.StopBits = TWOSTOPBITS;
+	dcb.StopBits = ONESTOPBIT;
 
 	SetCommState(hComm, &dcb);	
 
 	COMMTIMEOUTS cto;
 	GetCommTimeouts(hComm, &cto);
-	cto.ReadIntervalTimeout = 10;
-	cto.ReadTotalTimeoutConstant = 10; 
-	cto.ReadTotalTimeoutMultiplier = 10;
+	cto.ReadIntervalTimeout = 0;
+	cto.ReadTotalTimeoutConstant = 0; 
+	cto.ReadTotalTimeoutMultiplier = 0;
+	cto.WriteTotalTimeoutConstant = 0;
+	cto.WriteTotalTimeoutMultiplier = 0;
 	SetCommTimeouts(hComm, &cto);
 
 	/*size_t dataSize = sizeof(BalanceData);
@@ -49,14 +51,44 @@ HANDLE openPort(char* port) {
 }
 
 
+unsigned short calculateChecksum(ProtocolData* data) {
+	unsigned short sum = 0;
+	sum += data->header;
+	sum += data->type;
+	sum += data->size;
+	char* content = data->data;
+	for(int i = 0; i < data->size; i++) {
+		sum += content[i];
+	}
+	return sum;
+}
 
 int protocolReadTemp(char* port) {
-	HANDLE hnd = openPort(port);
+		
+	size_t size = sizeof(ProtocolData);
 
-	ProtocolData data;
-	DWORD NoBytesRead;		
-	ReadFile(hnd, &data, 6, &NoBytesRead, NULL);
+	ProtocolData* data = (ProtocolData*) calloc(1, size);
+	data->header = PROT_READ;
+	data->type = PROT_T_TEMP;
+	data->data = "Hello World!";
+	data->size = strlen(data->data);	
+	data->checksum = calculateChecksum(data);
+
+	HANDLE hnd = openPort(port);
+	DWORD NoBytesRead;
+	WriteFile(hnd, data, size, &NoBytesRead, NULL);	
+
+	
+
+	//Wait for response
+
+
+	//ReadFile(hnd, &data, 6, &NoBytesRead, NULL);
 
 	CloseHandle(hnd);
+	free(data);
+
+
+
 	return -1;
 }

@@ -11,11 +11,11 @@
 #define PROT_T_HISTORY  64
 
 typedef struct ProtocolData {
-	char header;
-	char type;
-	short size;
-	char* data;
-	short checksum;
+  char header;
+  char type;
+  unsigned short size;
+  char* data;
+  unsigned short checksum;
 } ProtocolData;
 
 typedef struct History {

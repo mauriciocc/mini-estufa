@@ -45,8 +45,6 @@ typedef struct UI {
   unsigned long lastUpdate;  
 } UI;
 
-#define EEPROM_CLOCK_H 1
-#define EEPROM_CLOCK_M 2
 #define CLOCK_MIN_TICK 1000
 
 typedef struct Clock {
