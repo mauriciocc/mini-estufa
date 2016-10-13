@@ -14,6 +14,17 @@ int plants[] = {
 	RB_SAMAMBAIA
 };
 
+char* plantName(WORD plantId) {
+	switch(plantId) {
+	case 0: return "Asplenio";
+	case 1: return "Azaleia";
+	case 2: return "Bromelia";
+	case 3: return "Camedorea";
+	case 4: return "Camelia";
+	case 5: return "Dracenas";
+	case 6: return "Samambaia";
+	}
+}
 int processSelectEvent(int event_id) {
 	for(int i = 0; i < ARRAYSIZE(plants); i++) {
 		if(plants[i] == event_id) {

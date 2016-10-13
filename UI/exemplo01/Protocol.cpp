@@ -37,58 +37,120 @@ HANDLE openPort(char* port) {
 	cto.WriteTotalTimeoutMultiplier = 0;
 	SetCommTimeouts(hComm, &cto);
 
-	/*size_t dataSize = sizeof(BalanceData);
-
-	BalanceData* data = (BalanceData*) calloc(1, dataSize);
-	DWORD NoBytesRead;	
-	ReadFile(hComm, data, dataSize, &NoBytesRead, NULL);	*/
-
 	return hComm;
+}
 
-	
+word msgSize(ProtocolData* msg) {
+	return PROT_SIZE + msg->size;
+}
 
-  //return data;
+WORD toWord(BYTE b1, BYTE b2) {
+  return (b2 << 8) | b1;
+}
+
+ProtocolData* parseMsg(HANDLE hnd) {
+  BYTE bytes[PROT_SIZE]; 	
+
+  DWORD NoBytesRead;
+  ReadFile(hnd, &bytes, 4, &NoBytesRead, NULL);		 
+  
+  ProtocolData* data = (ProtocolData*) calloc(1, sizeof(ProtocolData));
+  
+  data->header = bytes[0];
+  data->type = bytes[1];
+  data->size = toWord(bytes[2], bytes[3]);
+  
+  WORD ptr = 4;
+  if(data->size > 0) {    
+    data->data = (BYTE*) calloc(1, data->size);
+	ReadFile(hnd, data->data, data->size, &NoBytesRead, NULL); 	
+  }  
+
+  ReadFile(hnd, &bytes[ptr], 2, &NoBytesRead, NULL);  
+  
+  data->checksum = toWord(bytes[ptr], bytes[ptr+1]);
+
+  return data;  
+}
+
+word receiveWord(HANDLE h) {
+	byte msg[2];
+	DWORD r;
+	ReadFile(h, &msg, 2, &r, NULL); 	
+	return toWord(msg[0], msg[1]);
+}
+
+void freeMsg(ProtocolData* pd) {
+  if(pd->size > 0) {
+    free(pd->data);   
+  }
+  free(pd);
+}
+
+BYTE* toBytes(ProtocolData* data) {
+  WORD allocation = msgSize(data);
+  BYTE* ser = (BYTE*) malloc(allocation);
+  ser[0] = data->header;
+  ser[1] = data->type;  
+  ser[2] = LOBYTE(data->size);
+  ser[3] = HIBYTE(data->size);
+  int ptr = 4;
+  // Corpo da msg
+  int i = 0;
+  if(data->size > 0) {
+    for(; i < data->size; i++) {
+      ser[i+ptr] = data->data[i];
+    }
+    ptr += data->size;
+  }
+  ser[ptr] = LOBYTE(data->checksum);
+  ser[ptr+1] = HIBYTE(data->checksum);
+  return ser;
+}
+
+void sendMsg(ProtocolData* data, HANDLE hnd) {
+	BYTE* bytes = toBytes(data);  		
+
+	DWORD NoBytesRead;	
+	WriteFile(hnd, bytes, msgSize(data), &NoBytesRead, NULL);
+		
+	free(bytes);  
 }
 
 
-unsigned short calculateChecksum(ProtocolData* data) {
-	unsigned short sum = 0;
+WORD calculateChecksum(ProtocolData* data) {
+	WORD sum = 0;
 	sum += data->header;
 	sum += data->type;
 	sum += data->size;
-	char* content = data->data;
+	BYTE* content = data->data;
 	for(int i = 0; i < data->size; i++) {
 		sum += content[i];
 	}
 	return sum;
 }
 
-int protocolReadTemp(char* port) {
-		
-	size_t size = sizeof(ProtocolData);
-
-	ProtocolData* data = (ProtocolData*) calloc(1, size);
-	data->header = PROT_READ;
-	data->type = PROT_T_TEMP;
-	data->data = "Hello World!";
-	data->size = strlen(data->data);	
+ProtocolData* createMsg(BYTE header, BYTE type, char* msg) {
+	ProtocolData* data = (ProtocolData*) calloc(1, sizeof(ProtocolData));
+	data->header = header;
+	data->type = type;
+	data->data = (BYTE*) msg;
+	data->size = strlen(msg);	
 	data->checksum = calculateChecksum(data);
+	return data;
+}
 
-	HANDLE hnd = openPort(port);
-	DWORD NoBytesRead;
-	WriteFile(hnd, data, size, &NoBytesRead, NULL);	
+word protocolReadVar(char* port, byte var) {
 
-	
+	HANDLE h = openPort(port);
 
-	//Wait for response
-
-
-	//ReadFile(hnd, &data, 6, &NoBytesRead, NULL);
-
-	CloseHandle(hnd);
+	ProtocolData* data = createMsg(PROT_READ, var,  "");
+	sendMsg(data, h);
 	free(data);
 
+	word val = receiveWord(h);	
 
+	CloseHandle(h);
 
-	return -1;
+	return val;
 }

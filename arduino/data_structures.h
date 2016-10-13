@@ -1,3 +1,4 @@
+typedef unsigned long dword;
 #define APP_ID 127
 // Reads
 #define LM35    1
@@ -48,8 +49,8 @@ typedef struct UI {
 #define CLOCK_MIN_TICK 1000
 
 typedef struct Clock {
-  char h;
-  char m;
+  byte h;
+  byte m;
   unsigned long lastUpdate;
 } Clock;
 

@@ -1,3 +1,8 @@
+#define LOBYTE(x) ((unsigned char) ((x) & 0xff))
+#define HIBYTE(x) ((unsigned char) ((x) >> 8 & 0xff))
+
+#define PROT_SIZE 6
+
 #define PROT_WRITE 27
 #define PROT_READ  72
 
@@ -9,10 +14,9 @@
 #define PROT_T_HISTORY  64
 
 typedef struct ProtocolData {
-  char header;
-  char type;
-  unsigned short size;
-  char* data;
-  unsigned short checksum;
+  byte header;
+  byte type;
+  word size;
+  byte* data;
+  word checksum;
 } ProtocolData;
-

@@ -1,5 +1,5 @@
 #pragma once
-
+#define PROT_SIZE 6
 #define PROT_WRITE 27
 #define PROT_READ  72
 
@@ -10,12 +10,15 @@
 #define PROT_T_TIME     16
 #define PROT_T_HISTORY  64
 
+typedef unsigned char byte;
+typedef unsigned short word;
+
 typedef struct ProtocolData {
-  char header;
-  char type;
-  unsigned short size;
-  char* data;
-  unsigned short checksum;
+  BYTE header;
+  BYTE type;
+  WORD size;
+  BYTE* data;
+  WORD checksum;
 } ProtocolData;
 
 typedef struct History {
@@ -25,7 +28,7 @@ typedef struct History {
 	char* message;
 } History;
 
-int protocolReadTemp(char* port);
+word protocolReadVar(char* port, byte var);
 int protocolReadLux(char* port);
 int protocolReadPlant(char* port);
 int protocolWritePlant(char* port, char plant);

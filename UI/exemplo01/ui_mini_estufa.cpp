@@ -138,7 +138,13 @@ INT_PTR CALLBACK PrincipalProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				} else if(event_id == B_READ_SENSORS) {
 					char* port = (char*) malloc(32);
 					GetDlgItemTextA(hDlg, F_COM, port, 31);
-					int i = protocolReadTemp(port);
+					SetDlgItemInt(hDlg, F_TEMP, protocolReadVar(port, PROT_T_TEMP), FALSE);
+					SetDlgItemInt(hDlg, F_LUX, protocolReadVar(port, PROT_T_LUX), FALSE);
+					SetDlgItemTextA(hDlg, F_DISPLAY_PLANT, plantName(protocolReadVar(port, PROT_T_PLANT)));					
+					word time = protocolReadVar(port, PROT_T_TIME);
+					char buf[64];
+					sprintf(buf, "%.2d:%.2d", HIBYTE(time), LOBYTE(time));
+					SetDlgItemTextA(hDlg, F_ARD_TIME, buf);
 					free(port);
 					return true;
 				} else if(event_id == B_APPLY_TIME) { 

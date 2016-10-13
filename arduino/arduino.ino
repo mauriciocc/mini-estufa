@@ -5,7 +5,7 @@
 
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7); // 8 e 9 Pinos do backlight - 4,5,6,7 Pinos de dados
 
-char selectedPlant = ASPLENIO;
+word selectedPlant = ASPLENIO;
 
 struct Plant plants[7];
 
@@ -41,7 +41,7 @@ void setup() {
   pinMode(LDR, INPUT);
   
   pinMode(LED, OUTPUT);
-  pinMode(FAN, OUTPUT);
+  pinMode(FAN, OUTPUT);  
   pinMode(13, OUTPUT);
 
   plants[ASPLENIO]        = {{18, 22}, {30000, 32000}, "Asplenio"};
@@ -137,7 +137,7 @@ void temperatureSensor(unsigned long cTime) {
     temp.sampleCount = 0;    
     temp.sampleTemp = 0;
     
-    Serial.print(temp.value,DEC);
+    /*Serial.print(temp.value,DEC);
     Serial.print(" C, ");
     Serial.print("  Stage: ");
     Serial.print(temp.currentPwm,DEC);
@@ -145,6 +145,7 @@ void temperatureSensor(unsigned long cTime) {
     Serial.print(temp.minVal,DEC);
     Serial.print("  Max: ");
     Serial.println(temp.maxVal,DEC);    
+    */
 
     boolean isAbove = isAboveLimit(temp.value, &(plants[selectedPlant].temp));
     adjustPwm(FAN, isAbove, &temp);    
@@ -168,7 +169,7 @@ void lightSensor(unsigned long cTime) {
     light.sampleCount = 0;    
     light.sampleTemp = 0;
     
-    Serial.print(light.value,DEC);
+    /*Serial.print(light.value,DEC);
     Serial.print(" Lux, ");
     Serial.print("  Stage: ");
     Serial.print(light.currentPwm,DEC);
@@ -176,6 +177,7 @@ void lightSensor(unsigned long cTime) {
     Serial.print(light.minVal,DEC);
     Serial.print("  Max: ");
     Serial.println(light.maxVal,DEC);     
+    */
 
     boolean isBelow = isBelowLimit(light.value, &(plants[selectedPlant].lux));
     adjustPwm(LED, isBelow, &light);
@@ -243,8 +245,8 @@ void updateClock(unsigned long cTime) {
 char readKeyboard(unsigned long cTime) {
   char key = NONE;
 
-  Serial.println("millis: "+ String(cTime));
-  Serial.println("lastRead: "+ String(keyb.lastRead));
+  /*Serial.println("millis: "+ String(cTime));
+  Serial.println("lastRead: "+ String(keyb.lastRead));*/
   
   if(cTime < keyb.lastRead) {
     return key;
@@ -279,49 +281,8 @@ void nextPlant() {
   }
 }
 
-int received=0;
-ProtocolData protoData;
-boolean entered = false;
-void loop() {
-  
-  unsigned long cTime = millis();  
-  /*updateClock(cTime);
-  temperatureSensor(cTime);
-  lightSensor(cTime);
-  refreshLCD(cTime);*/
-
-   // send data only when you receive data:
-   
-        if (!entered && Serial.available() >= 4) {
-          protoData.header = Serial.read();
-          protoData.type = Serial.read();
-          protoData.size = Serial.read();
-          protoData.size = (Serial.read() << 8) | protoData.size; 
-          if(protoData.size > 0) {
-            char* content = (char*) malloc(protoData.size);
-            for(int i = 0; i < protoData.size; i++) {
-              content[i] = Serial.read(); 
-            }
-            protoData.data = content;
-          }
-          protoData.checksum = Serial.read();
-          protoData.checksum = (Serial.read() << 8) | protoData.checksum;
-          entered = true;
-        }
-
-//strcmp(protoData.data, "Hello World!")
-          if(protoData.header == PROT_READ && protoData.type == PROT_T_TEMP && protoData.size == 12) {
-            digitalWrite(13, HIGH);
-          }          
-        delay(2000);
-        digitalWrite(13, LOW);
-
-        Serial.println(protoData.header, DEC);
-        Serial.println(protoData.type, DEC);
-        Serial.println(protoData.size, DEC);
-        Serial.println(protoData.data);
-                Serial.println(protoData.checksum, DEC);
- /* switch(readKeyboard(cTime)) {
+void handleButtons(dword cTime) {
+  switch(readKeyboard(cTime)) {
     case SELECT: {
       nextPlant();
       break;
@@ -342,5 +303,59 @@ void loop() {
       decrementMinute();      
       break;
     }
-  }*/
+  }
+}
+
+void handleCommunication() {
+  if(Serial.available() < 4) {
+    return;
+  }
+  
+  ProtocolData* msg = parseMsg();
+  switch(msg->header) {
+    case PROT_READ: {
+      switch(msg->type) {
+        case PROT_T_TEMP: {
+          sendWord(temp.value);
+          break;
+        }
+        case PROT_T_LUX: {
+          sendWord(light.value);
+          break;
+        }
+        case PROT_T_PLANT: {          
+          sendWord(selectedPlant);
+          break;
+        }
+        case PROT_T_TIME: {
+          //word msg = appClock.m;
+          //sendWord(msg);
+          sendByte(appClock.m);
+          sendByte(appClock.h);
+          break;
+        }
+      }
+      break;
+    }
+    case PROT_WRITE: {
+      break;
+    }
+  }  
+    
+    sendMsg(msg);
+    freeMsg(msg);    
+  
+}
+void loop() {
+  
+  unsigned long cTime = millis();  
+
+
+  updateClock(cTime);
+  temperatureSensor(cTime);
+  lightSensor(cTime);
+  refreshLCD(cTime);
+  //handleButtons(cTime);
+  handleCommunication();
+
 }
