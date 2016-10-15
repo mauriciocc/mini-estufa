@@ -124,38 +124,43 @@ INT_PTR CALLBACK PrincipalProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	switch(message) {
 	
 		case WM_INITDIALOG: {
-			CheckDlgButton(hDlg, RB_ASPLENIO, 1);
+			//CheckDlgButton(hDlg, RB_ASPLENIO, 1);
 			SetDlgItemText(hDlg, F_COM, _T("COM1"));
 			break;
 		}
 		case WM_COMMAND: {						
 			int event_type = HIWORD(wParam);
 			if(event_type == BN_CLICKED) {
-				int event_id = LOWORD(wParam);
+				char* port = (char*) malloc(32);
+				GetDlgItemTextA(hDlg, F_COM, port, 31);
 
-				if(processSelectEvent(event_id)) {
-					return true;
-				} else if(event_id == B_READ_SENSORS) {
-					char* port = (char*) malloc(32);
-					GetDlgItemTextA(hDlg, F_COM, port, 31);
+				int event_id = LOWORD(wParam);
+				int plant = processSelectEvent(event_id);
+				BOOLEAN plantChanged = plant >= 0;
+				if(plantChanged) {
+					protocolWriteVar(port, PROT_T_PLANT, plant);
+				} 
+				if(event_id == B_READ_SENSORS || plantChanged) {
+					
 					SetDlgItemInt(hDlg, F_TEMP, protocolReadVar(port, PROT_T_TEMP), FALSE);
 					SetDlgItemInt(hDlg, F_LUX, protocolReadVar(port, PROT_T_LUX), FALSE);
-					SetDlgItemTextA(hDlg, F_DISPLAY_PLANT, plantName(protocolReadVar(port, PROT_T_PLANT)));					
+					word currentPlant = protocolReadVar(port, PROT_T_PLANT);
+					SetDlgItemTextA(hDlg, F_DISPLAY_PLANT, plantName(currentPlant));					
+					syncPlant(currentPlant, hDlg);
 					word time = protocolReadVar(port, PROT_T_TIME);
 					char buf[64];
 					sprintf(buf, "%.2d:%.2d", HIBYTE(time), LOBYTE(time));
 					SetDlgItemTextA(hDlg, F_ARD_TIME, buf);
-					free(port);
-					return true;
+					
 				} else if(event_id == B_APPLY_TIME) { 
 					char* result = retrieveDateTime(hDlg);													
 					tm* timeStruct = parseDate(result);
 
 					free(result);
 					free(timeStruct);
-					
-					return TRUE;
 				}
+
+				free(port);
 			}		
 
 			break;

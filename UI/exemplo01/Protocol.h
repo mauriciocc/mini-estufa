@@ -29,6 +29,7 @@ typedef struct History {
 } History;
 
 word protocolReadVar(char* port, byte var);
+void protocolWriteVar(char* port, byte var, word value);
 int protocolReadLux(char* port);
 int protocolReadPlant(char* port);
 int protocolWritePlant(char* port, char plant);

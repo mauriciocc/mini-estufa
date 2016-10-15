@@ -130,12 +130,12 @@ WORD calculateChecksum(ProtocolData* data) {
 	return sum;
 }
 
-ProtocolData* createMsg(BYTE header, BYTE type, char* msg) {
+ProtocolData* createMsg(BYTE header, BYTE type, char* msg, short size) {
 	ProtocolData* data = (ProtocolData*) calloc(1, sizeof(ProtocolData));
 	data->header = header;
 	data->type = type;
 	data->data = (BYTE*) msg;
-	data->size = strlen(msg);	
+	data->size = size;	
 	data->checksum = calculateChecksum(data);
 	return data;
 }
@@ -144,7 +144,7 @@ word protocolReadVar(char* port, byte var) {
 
 	HANDLE h = openPort(port);
 
-	ProtocolData* data = createMsg(PROT_READ, var,  "");
+	ProtocolData* data = createMsg(PROT_READ, var,  NULL, 0);
 	sendMsg(data, h);
 	free(data);
 
@@ -153,4 +153,15 @@ word protocolReadVar(char* port, byte var) {
 	CloseHandle(h);
 
 	return val;
+}
+
+void protocolWriteVar(char* port, byte var, word value) {
+	HANDLE h = openPort(port);
+		
+	char vals[] = {value};
+	ProtocolData* data = createMsg(PROT_WRITE, var,  vals, 1);
+	sendMsg(data, h);
+	free(data);
+
+	CloseHandle(h);
 }

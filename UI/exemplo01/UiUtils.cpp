@@ -25,14 +25,27 @@ char* plantName(WORD plantId) {
 	case 6: return "Samambaia";
 	}
 }
+
+void syncPlant(WORD selectedPlant, HWND dlg) {
+	currentPlant = selectedPlant;
+	for(int i = 0; i < ARRAYSIZE(plants); i++) {
+		BOOLEAN val = 0;
+		if(i == selectedPlant) {
+			val = 1;
+		}
+		CheckDlgButton(dlg, plants[i], val);
+	}
+	
+}
+
 int processSelectEvent(int event_id) {
 	for(int i = 0; i < ARRAYSIZE(plants); i++) {
 		if(plants[i] == event_id) {
 			currentPlant = i;
-			return 1;
+			return i;
 		}
 	}
-	return 0;
+	return -1;
 }
 
 char* retrieveDateTime(HWND hwnd) {

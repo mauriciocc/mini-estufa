@@ -328,8 +328,6 @@ void handleCommunication() {
           break;
         }
         case PROT_T_TIME: {
-          //word msg = appClock.m;
-          //sendWord(msg);
           sendByte(appClock.m);
           sendByte(appClock.h);
           break;
@@ -338,6 +336,13 @@ void handleCommunication() {
       break;
     }
     case PROT_WRITE: {
+      switch(msg->type) {
+        case PROT_T_PLANT: {
+          byte plant = msg->data[0];
+          selectedPlant = plant;
+          break;
+        }
+      }      
       break;
     }
   }  
