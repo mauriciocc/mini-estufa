@@ -1,4 +1,8 @@
 #pragma once
+
+#define LM35 1
+#define LDR 2
+
 #define PROT_SIZE 6
 #define PROT_WRITE 27
 #define PROT_READ  72
@@ -21,18 +25,15 @@ typedef struct ProtocolData {
   WORD checksum;
 } ProtocolData;
 
-typedef struct History {
-	char plant;
-	unsigned long ocurrence_time;
-	short size;
-	char* message;
-} History;
+typedef struct IncidentLog {
+  byte plant;
+  byte h;
+  byte m;
+  byte sensor;
+  byte bound;    
+} IncidentLog;
 
-word protocolReadVar(char* port, byte var);
+WORD toWord(BYTE b1, BYTE b2);
+word protocolReadVar(char* port, byte var, word value);
 void protocolWriteVar(char* port, byte var, word value);
-int protocolReadLux(char* port);
-int protocolReadPlant(char* port);
-int protocolWritePlant(char* port, char plant);
-unsigned long protocolReadTime(char* port);
-void protocolWriteTime(char* port, unsigned long newTime);
-History* readHistorical(char* port);
+IncidentLog* protocolReadLogs(char* port, WORD* size);

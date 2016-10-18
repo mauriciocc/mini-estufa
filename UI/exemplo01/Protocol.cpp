@@ -140,11 +140,18 @@ ProtocolData* createMsg(BYTE header, BYTE type, char* msg, short size) {
 	return data;
 }
 
-word protocolReadVar(char* port, byte var) {
+word protocolReadVar(char* port, byte var, word value) {
 
 	HANDLE h = openPort(port);
 
-	ProtocolData* data = createMsg(PROT_READ, var,  NULL, 0);
+	char vals[1] = {NULL};
+	short size = 0;
+	if(value != NULL) {
+		size = 1;
+		vals[0] = value;
+	}
+	
+	ProtocolData* data = createMsg(PROT_READ, var, vals, size);
 	sendMsg(data, h);
 	free(data);
 
@@ -158,10 +165,32 @@ word protocolReadVar(char* port, byte var) {
 void protocolWriteVar(char* port, byte var, word value) {
 	HANDLE h = openPort(port);
 		
-	char vals[] = {value};
-	ProtocolData* data = createMsg(PROT_WRITE, var,  vals, 1);
+	char vals[] = {LOBYTE(value), HIBYTE(value)};
+	ProtocolData* data = createMsg(PROT_WRITE, var,  vals, 2);
 	sendMsg(data, h);
 	free(data);
 
 	CloseHandle(h);
+}
+
+IncidentLog* protocolReadLogs(char* port, WORD* size) {
+	HANDLE h = openPort(port);
+
+	ProtocolData* data = createMsg(PROT_READ, PROT_T_HISTORY, NULL, 0);
+	sendMsg(data, h);
+	free(data);
+
+	word rSize = receiveWord(h);	
+
+	
+	IncidentLog* values = (IncidentLog*) malloc(rSize);
+	
+	DWORD NoBytesRead;	
+	ReadFile(h, values, rSize, &NoBytesRead, NULL);  
+
+	CloseHandle(h);
+
+	*size = rSize/sizeof(IncidentLog);
+
+	return values;
 }

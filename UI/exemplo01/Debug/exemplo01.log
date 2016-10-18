@@ -1,11 +1,11 @@
-﻿Build started 15/10/2016 10:36:02.
+﻿Build started 17/10/2016 23:35:25.
      1>Project "G:\projects\mini-estufa\UI\exemplo01\exemplo01.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yu"stdafx.h" /Fp"Debug\ui_mini_estufa.pch" /Fo"Debug\\" /Fd"Debug\vc110.pdb" /Gd /TP /analyze- /errorReport:prompt ui_mini_estufa.cpp
          ui_mini_estufa.cpp
-     1>g:\projects\mini-estufa\ui\exemplo01\ui_mini_estufa.cpp(121): warning C4101: 'ps' : unreferenced local variable
-     1>g:\projects\mini-estufa\ui\exemplo01\ui_mini_estufa.cpp(122): warning C4101: 'hdc' : unreferenced local variable
-     1>g:\projects\mini-estufa\ui\exemplo01\ui_mini_estufa.cpp(176): warning C4715: 'PrincipalProc' : not all control paths return a value
+     1>g:\projects\mini-estufa\ui\exemplo01\ui_mini_estufa.cpp(118): warning C4101: 'ps' : unreferenced local variable
+     1>g:\projects\mini-estufa\ui\exemplo01\ui_mini_estufa.cpp(119): warning C4101: 'hdc' : unreferenced local variable
+     1>g:\projects\mini-estufa\ui\exemplo01\ui_mini_estufa.cpp(200): warning C4715: 'PrincipalProc' : not all control paths return a value
        Link:
          C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"G:\projects\mini-estufa\UI\Debug\ui_mini_estufa.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"G:\projects\mini-estufa\UI\Debug\ui_mini_estufa.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"G:\projects\mini-estufa\UI\Debug\ui_mini_estufa.lib" /MACHINE:X86 Debug\exemplo01.res
          Debug\DateUtils.obj
@@ -18,4 +18,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:00.94
+Time Elapsed 00:00:00.48

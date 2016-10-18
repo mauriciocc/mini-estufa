@@ -1,3 +1,5 @@
+#pragma once
+
 #define LOBYTE(x) ((unsigned char) ((x) & 0xff))
 #define HIBYTE(x) ((unsigned char) ((x) >> 8 & 0xff))
 
@@ -20,3 +22,12 @@ typedef struct ProtocolData {
   byte* data;
   word checksum;
 } ProtocolData;
+
+typedef struct IncidentLog {
+  byte plant;
+  byte h;
+  byte m;
+  byte sensor;
+  byte bound;    
+} IncidentLog;
+

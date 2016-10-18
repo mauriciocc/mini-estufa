@@ -2,6 +2,7 @@
 #include <EEPROM.h>
 #include "data_structures.h"
 #include "protocol.h"
+#include "EEPROMAnything.h"
 
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7); // 8 e 9 Pinos do backlight - 4,5,6,7 Pinos de dados
 
@@ -9,26 +10,35 @@ word selectedPlant = ASPLENIO;
 
 struct Plant plants[7];
 
-struct ControlStruct temp = {LM35, 0, 0, 999, 0, 0, 0, 0};
-struct ControlStruct light = {LDR, 0, -999, 999, 0, 0, 0, 0};
+struct ControlStruct temp = {LM35, 0, 0, 999, 0, 0, 0, 0, 0};
+struct ControlStruct light = {LDR, 0, 0, 999, 0, 0, 0, 0, 0};
 struct UI ui = {0, 0};
 struct Clock appClock = {0,0,0};
 Keyb keyb = {0,0};
 
-const unsigned char PWM_DUTY[] = {0, 25, 50, 75, 100, 125, 150, 175, 200, 225, 255};
+const byte PWM_DUTY[] = {0, 25, 50, 75, 100, 125, 150, 175, 200, 225, 255};
+const byte PWM_DUTY_MODES = sizeof(PWM_DUTY)/sizeof(byte);
 
+word EEPROM_POINTER_IDX;
+word MAX_MEM_POINTER;
+word memPointer;
 
 char readKey;
 
 void setup() {  
 
   int EEPROM_APP_ID_IDX = EEPROM.length() - 1 ;
+  EEPROM_POINTER_IDX = EEPROM.length() - 3;
+  MAX_MEM_POINTER = (EEPROM_POINTER_IDX/sizeof(IncidentLog)) - 1;
   // Limpa EEPROM caso não seja identificada app, limpa memória
   if(EEPROM.read(EEPROM_APP_ID_IDX) != APP_ID) {
     for (int i = 0 ; i < EEPROM.length() ; i++) {
       EEPROM.write(i, 0);
     }
     EEPROM.write(EEPROM_APP_ID_IDX, APP_ID);
+  } else {
+    EEPROM_readAnything(EEPROM_POINTER_IDX, memPointer);
+    //memPointer = 0;
   }
   
   Serial.begin(9600, SERIAL_8N1);
@@ -106,9 +116,9 @@ void adjustPwm(char pin, boolean condition, struct ControlStruct* ctrlStruct) {
     return;
   }
   
-  unsigned char currentPwm = ctrlStruct->currentPwm;
+  byte currentPwm = ctrlStruct->currentPwm;
   if(condition) {
-      if(currentPwm < PWM_DUTY_MODES) {
+      if(currentPwm < (PWM_DUTY_MODES-1)) {
         ctrlStruct->currentPwm++;        
       }
   } else {
@@ -117,6 +127,37 @@ void adjustPwm(char pin, boolean condition, struct ControlStruct* ctrlStruct) {
     }
   }
   analogWrite(pin, PWM_DUTY[ctrlStruct->currentPwm]); 
+}
+
+void writeLog(IncidentLog* ilog) {  
+  if(memPointer < MAX_MEM_POINTER) {
+    EEPROM_writeAnything(memPointer*sizeof(IncidentLog), *ilog);
+    memPointer++;
+    EEPROM_writeAnything(EEPROM_POINTER_IDX, memPointer);      
+    Serial.println("Writing Log " + String(memPointer) + " - " + String(EEPROM.length()));  
+  }
+}
+
+void logIncident(unsigned long cTime, ControlStruct* ctrl, boolean isAbove, boolean isBelow) {  
+  if( (cTime - ctrl->lastIncident) < TIME_BETWEEN_INCIDENT_LOG )  {
+    return;
+  }
+  if(isAbove || isBelow) {
+    ctrl->lastIncident = cTime;
+    IncidentLog* ilog = (IncidentLog*) malloc(sizeof(IncidentLog));    
+    ilog->plant = selectedPlant;
+    ilog->h = appClock.h;
+    ilog->m = appClock.m;
+    ilog->sensor = ctrl->sensor;
+    if(isAbove) {
+      ilog->bound = 1;
+    } else {
+      ilog->bound = 0;
+    }
+    writeLog(ilog);
+    free(ilog);
+  }
+  
 }
 
 void temperatureSensor(unsigned long cTime) {
@@ -149,6 +190,9 @@ void temperatureSensor(unsigned long cTime) {
 
     boolean isAbove = isAboveLimit(temp.value, &(plants[selectedPlant].temp));
     adjustPwm(FAN, isAbove, &temp);    
+
+    boolean isBelow = isBelowLimit(temp.value, &(plants[selectedPlant].temp));
+    logIncident(cTime, &temp, isAbove, isBelow);
   }
 }
 
@@ -181,6 +225,9 @@ void lightSensor(unsigned long cTime) {
 
     boolean isBelow = isBelowLimit(light.value, &(plants[selectedPlant].lux));
     adjustPwm(LED, isBelow, &light);
+
+    boolean isAbove = isAboveLimit(light.value, &(plants[selectedPlant].lux));
+    logIncident(cTime, &light, isAbove, isBelow);
   }
 }
 
@@ -332,6 +379,36 @@ void handleCommunication() {
           sendByte(appClock.h);
           break;
         }
+        case PROT_T_STATUS: {
+          byte response = 0;
+          switch(msg->data[0]) {
+            case LM35: {
+              response = temp.currentPwm;
+              break;
+            }
+            case LDR: {
+              response = light.currentPwm;
+              break;
+            }            
+          }
+          sendByte(response);
+          sendByte(PWM_DUTY_MODES);
+          break;
+        }
+        case PROT_T_HISTORY: {          
+          word totalSize = sizeof(IncidentLog)*memPointer;
+          sendWord(totalSize);
+          IncidentLog val;
+          for(word i = 0; i < memPointer; i++) {
+            EEPROM_readAnything(i*sizeof(IncidentLog), val);                          
+            sendByte(val.plant);
+            sendByte(val.h);
+            sendByte(val.m);
+            sendByte(val.sensor);
+            sendByte(val.bound);
+          }          
+          break;
+        }
       }
       break;
     }
@@ -342,12 +419,15 @@ void handleCommunication() {
           selectedPlant = plant;
           break;
         }
+        case PROT_T_TIME: {
+          appClock.h = msg->data[0];
+          appClock.m = msg->data[1];
+          break;
+        }
       }      
       break;
     }
-  }  
-    
-    sendMsg(msg);
+  } 
     freeMsg(msg);    
   
 }

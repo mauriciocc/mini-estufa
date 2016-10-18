@@ -1,6 +1,3 @@
-// exemplo01.cpp : Defines the entry point for the application.
-//
-
 #include "stdafx.h"
 #include "ui_mini_estufa.h"
 #include "Protocol.h"
@@ -140,24 +137,51 @@ INT_PTR CALLBACK PrincipalProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				if(plantChanged) {
 					protocolWriteVar(port, PROT_T_PLANT, plant);
 				} 
-				if(event_id == B_READ_SENSORS || plantChanged) {
-					
-					SetDlgItemInt(hDlg, F_TEMP, protocolReadVar(port, PROT_T_TEMP), FALSE);
-					SetDlgItemInt(hDlg, F_LUX, protocolReadVar(port, PROT_T_LUX), FALSE);
-					word currentPlant = protocolReadVar(port, PROT_T_PLANT);
-					SetDlgItemTextA(hDlg, F_DISPLAY_PLANT, plantName(currentPlant));					
-					syncPlant(currentPlant, hDlg);
-					word time = protocolReadVar(port, PROT_T_TIME);
-					char buf[64];
-					sprintf(buf, "%.2d:%.2d", HIBYTE(time), LOBYTE(time));
-					SetDlgItemTextA(hDlg, F_ARD_TIME, buf);
-					
-				} else if(event_id == B_APPLY_TIME) { 
+
+				if(event_id == B_APPLY_TIME) { 
 					char* result = retrieveDateTime(hDlg);													
 					tm* timeStruct = parseDate(result);
-
+					word timeVal = toWord(timeStruct->tm_hour, timeStruct->tm_min);
+					protocolWriteVar(port, PROT_T_TIME, timeVal);
 					free(result);
 					free(timeStruct);
+				}
+
+				if(event_id == B_APPLY_TIME || event_id == B_READ_SENSORS || plantChanged) {
+					
+					SetDlgItemInt(hDlg, F_TEMP, protocolReadVar(port, PROT_T_TEMP, NULL), FALSE);
+					SetDlgItemInt(hDlg, F_LUX, protocolReadVar(port, PROT_T_LUX, NULL), FALSE);
+
+					word currentPlant = protocolReadVar(port, PROT_T_PLANT, NULL);
+					SetDlgItemTextA(hDlg, F_DISPLAY_PLANT, plantName(currentPlant));					
+					syncPlant(currentPlant, hDlg);
+
+					setTimeInfo(hDlg, protocolReadVar(port, PROT_T_TIME, NULL));
+										
+					setPwmStatus(hDlg, protocolReadVar(port, PROT_T_STATUS, LM35), F_FAN);
+					setPwmStatus(hDlg, protocolReadVar(port, PROT_T_STATUS, LDR), F_LED);
+					
+				}
+
+				if(event_id == BTN_READ_LOGS) {
+					WORD size = 0;
+					IncidentLog* logs = protocolReadLogs(port, &size);
+					char* message = (char*)malloc(size*128);
+					strcpy(message, "");
+					char buf[1024];
+					for(int i = 0; i < size; i++) {
+						sprintf(buf, "%.3d - %.2d:%.2d - %s - %s - %s \r\n", 
+							i,
+							logs[i].h, 
+							logs[i].m, 
+							plantName(logs[i].plant),
+							sensorName(logs[i].sensor), 
+							logs[i].bound ? "ACIMA" : "ABAIXO");
+						strcat(message, buf);
+					}
+					SetDlgItemTextA(hDlg, F_LOG_OUTPUT, message);
+					free(message);
+					free(logs);					
 				}
 
 				free(port);

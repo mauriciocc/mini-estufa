@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "resource.h"
 #include "UiUtils.h"
+#include "Protocol.h"
 
 
 char currentPlant = 0;
@@ -23,6 +24,17 @@ char* plantName(WORD plantId) {
 	case 4: return "Camelia";
 	case 5: return "Dracenas";
 	case 6: return "Samambaia";
+	}
+}
+
+char* sensorName(char sensor) {
+	switch(sensor) {
+		case LM35:
+			return "TEMPERATURA";
+		case LDR:
+			return "LUMINOSIDADE";
+		default:
+			return "-";
 	}
 }
 
@@ -59,4 +71,19 @@ char* retrieveDateTime(HWND hwnd) {
 	sprintf(result, "%s %s", &date, &time);
 
 	return result;
+}
+
+void setPwmStatus(HWND dlg, WORD status, WORD element) {	
+	double steps = HIBYTE(status) - 1;
+	double currentStep = LOBYTE(status);
+	double perc = (currentStep/steps)*100;
+	char buf[128];
+	sprintf(buf, "%0.2f%%", perc);
+	SetDlgItemTextA(dlg, element, buf);
+}
+
+void setTimeInfo(HWND dlg, WORD time) {
+	char buf[128];
+	sprintf(buf, "%.2d:%.2d", HIBYTE(time), LOBYTE(time));
+	SetDlgItemTextA(dlg, F_ARD_TIME, buf);
 }

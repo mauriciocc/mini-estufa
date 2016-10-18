@@ -1,3 +1,6 @@
+#pragma once
+#include "protocol.h"
+
 typedef unsigned long dword;
 #define APP_ID 127
 // Reads
@@ -12,19 +15,19 @@ typedef unsigned long dword;
 #define T_SAMPLE 50
 #define SAMPLES 20
 
-#define PWM_DUTY_MODES 9
-
+#define TIME_BETWEEN_INCIDENT_LOG 5000
 
 // Data Structures
 typedef struct ControlStruct {
-  char sensor;
-  unsigned int value;  
+  byte sensor;
+  unsigned int value;
   int maxVal;
   int minVal;
   long unsigned lastRead;
   int sampleCount;
   unsigned long sampleTemp;
-  unsigned char currentPwm;
+  byte currentPwm;
+  dword lastIncident;
 } ControlStruct;
 
 typedef struct Range {
