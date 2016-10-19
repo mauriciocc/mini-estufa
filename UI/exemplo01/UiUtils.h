@@ -1,5 +1,6 @@
 #pragma once
 
+void readAndUpdateScreen(HWND hwnd, char* port);
 void syncPlant(WORD selectedPlant, HWND dlg);
 char* plantName(WORD plantId);
 char* retrieveDateTime(HWND hwnd);

@@ -13,7 +13,7 @@ HANDLE openPort(char* port) {
                       NULL);        // Null for Comm Devices
 
   if (hComm == INVALID_HANDLE_VALUE){
-      return NULL;
+      return hComm;
   }
 
 	DCB dcb;		
@@ -21,7 +21,7 @@ HANDLE openPort(char* port) {
 
 	GetCommState(hComm, &dcb);	
 
-	dcb.BaudRate = CBR_9600;
+	dcb.BaudRate = CBR_115200;
 	dcb.ByteSize = 8;         
 	dcb.Parity   = NOPARITY; 
 	dcb.StopBits = ONESTOPBIT;
@@ -30,11 +30,11 @@ HANDLE openPort(char* port) {
 
 	COMMTIMEOUTS cto;
 	GetCommTimeouts(hComm, &cto);
-	cto.ReadIntervalTimeout = 0;
-	cto.ReadTotalTimeoutConstant = 0; 
-	cto.ReadTotalTimeoutMultiplier = 0;
-	cto.WriteTotalTimeoutConstant = 0;
-	cto.WriteTotalTimeoutMultiplier = 0;
+	cto.ReadIntervalTimeout = 2500;
+	cto.ReadTotalTimeoutConstant = 500; 
+	cto.ReadTotalTimeoutMultiplier = 200;
+	cto.WriteTotalTimeoutConstant = 500;
+	cto.WriteTotalTimeoutMultiplier = 200;
 	SetCommTimeouts(hComm, &cto);
 
 	return hComm;
@@ -181,16 +181,25 @@ IncidentLog* protocolReadLogs(char* port, WORD* size) {
 	free(data);
 
 	word rSize = receiveWord(h);	
-
-	
-	IncidentLog* values = (IncidentLog*) malloc(rSize);
-	
-	DWORD NoBytesRead;	
-	ReadFile(h, values, rSize, &NoBytesRead, NULL);  
-
-	CloseHandle(h);
-
 	*size = rSize/sizeof(IncidentLog);
+	
+	IncidentLog* values = NULL;
+	if(rSize > 0) {
+		values = (IncidentLog*) malloc(rSize);	
+		DWORD NoBytesRead;	
+		ReadFile(h, values, rSize, &NoBytesRead, NULL);  
+	}
+
+	CloseHandle(h);	
 
 	return values;
+}
+
+BOOLEAN isPortAvailable(char* port) {
+	HANDLE h = openPort(port);
+	BOOLEAN valid = h != INVALID_HANDLE_VALUE;
+	if(valid) {
+		CloseHandle(h);
+	}
+	return valid;
 }

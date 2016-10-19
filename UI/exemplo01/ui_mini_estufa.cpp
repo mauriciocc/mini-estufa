@@ -115,15 +115,20 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 
 INT_PTR CALLBACK PrincipalProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
+	static UINT_PTR timer = NULL;
+	static WORD TIMER_ID = 999;
 	PAINTSTRUCT ps;
 	HDC hdc;
 		
+	BOOLEAN timerEvent = FALSE;
 	switch(message) {
 	
-		case WM_INITDIALOG: {
-			//CheckDlgButton(hDlg, RB_ASPLENIO, 1);
-			SetDlgItemText(hDlg, F_COM, _T("COM1"));
+		case WM_INITDIALOG: {			
+			SetDlgItemText(hDlg, F_COM, _T("COM1"));			
 			break;
+		}
+		case WM_TIMER: {
+			timerEvent = TRUE;
 		}
 		case WM_COMMAND: {						
 			int event_type = HIWORD(wParam);
@@ -131,7 +136,36 @@ INT_PTR CALLBACK PrincipalProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				char* port = (char*) malloc(32);
 				GetDlgItemTextA(hDlg, F_COM, port, 31);
 
+				if(!isPortAvailable(port)){
+					MessageBoxA(hDlg, 
+						"Não foi possível estabelecer conxão com a porta informada, verifique se o dispositivo esta conectado ao PC e a porta esta configurada corretamente",
+						"Atenção!",
+						MB_ICONWARNING | MB_OK);
+					return TRUE;
+					free(port);
+				}
+
 				int event_id = LOWORD(wParam);
+
+				if(event_id == BTN_START_SYNC) {
+					if(timer == NULL) {
+						timer = SetTimer(hDlg, TIMER_ID, 5000, (TIMERPROC) NULL);
+						EnableWindow(GetDlgItem(hDlg, BTN_START_SYNC), FALSE);
+						EnableWindow(GetDlgItem(hDlg, F_COM), FALSE);
+						EnableWindow(GetDlgItem(hDlg, BTN_STOP_SYNC), TRUE);
+						timerEvent = TRUE;
+					}
+				}
+				if(event_id == BTN_STOP_SYNC) {
+					if(timer != NULL) {
+						KillTimer(hDlg, timer);
+						timer = NULL;
+						EnableWindow(GetDlgItem(hDlg, BTN_START_SYNC), TRUE);
+						EnableWindow(GetDlgItem(hDlg, F_COM), TRUE);
+						EnableWindow(GetDlgItem(hDlg, BTN_STOP_SYNC), FALSE);
+					}
+				}
+
 				int plant = processSelectEvent(event_id);
 				BOOLEAN plantChanged = plant >= 0;
 				if(plantChanged) {
@@ -147,41 +181,13 @@ INT_PTR CALLBACK PrincipalProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 					free(timeStruct);
 				}
 
-				if(event_id == B_APPLY_TIME || event_id == B_READ_SENSORS || plantChanged) {
-					
-					SetDlgItemInt(hDlg, F_TEMP, protocolReadVar(port, PROT_T_TEMP, NULL), FALSE);
-					SetDlgItemInt(hDlg, F_LUX, protocolReadVar(port, PROT_T_LUX, NULL), FALSE);
-
-					word currentPlant = protocolReadVar(port, PROT_T_PLANT, NULL);
-					SetDlgItemTextA(hDlg, F_DISPLAY_PLANT, plantName(currentPlant));					
-					syncPlant(currentPlant, hDlg);
-
-					setTimeInfo(hDlg, protocolReadVar(port, PROT_T_TIME, NULL));
-										
-					setPwmStatus(hDlg, protocolReadVar(port, PROT_T_STATUS, LM35), F_FAN);
-					setPwmStatus(hDlg, protocolReadVar(port, PROT_T_STATUS, LDR), F_LED);
-					
+				if(event_id == B_APPLY_TIME || event_id == B_READ_SENSORS || plantChanged || timerEvent) {					
+					readAndUpdateScreen(hDlg, port);										
 				}
 
-				if(event_id == BTN_READ_LOGS) {
-					WORD size = 0;
-					IncidentLog* logs = protocolReadLogs(port, &size);
-					char* message = (char*)malloc(size*128);
-					strcpy(message, "");
-					char buf[1024];
-					for(int i = 0; i < size; i++) {
-						sprintf(buf, "%.3d - %.2d:%.2d - %s - %s - %s \r\n", 
-							i,
-							logs[i].h, 
-							logs[i].m, 
-							plantName(logs[i].plant),
-							sensorName(logs[i].sensor), 
-							logs[i].bound ? "ACIMA" : "ABAIXO");
-						strcat(message, buf);
-					}
-					SetDlgItemTextA(hDlg, F_LOG_OUTPUT, message);
-					free(message);
-					free(logs);					
+				if(event_id == BTN_CLEAR_LOGS) {
+					protocolWriteVar(port, PROT_T_STATUS, LOG_ID);
+					SetDlgItemTextA(hDlg, F_LOG_OUTPUT, "");
 				}
 
 				free(port);

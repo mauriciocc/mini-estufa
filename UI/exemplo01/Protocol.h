@@ -1,5 +1,7 @@
 #pragma once
 
+#define LOG_ID 99
+
 #define LM35 1
 #define LDR 2
 
@@ -33,6 +35,7 @@ typedef struct IncidentLog {
   byte bound;    
 } IncidentLog;
 
+BOOLEAN isPortAvailable(char* port);
 WORD toWord(BYTE b1, BYTE b2);
 word protocolReadVar(char* port, byte var, word value);
 void protocolWriteVar(char* port, byte var, word value);

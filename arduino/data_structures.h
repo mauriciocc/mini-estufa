@@ -3,6 +3,9 @@
 
 typedef unsigned long dword;
 #define APP_ID 127
+
+#define LOG_ID 99
+
 // Reads
 #define LM35    1
 #define LDR     2

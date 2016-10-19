@@ -41,7 +41,7 @@ void setup() {
     //memPointer = 0;
   }
   
-  Serial.begin(9600, SERIAL_8N1);
+  Serial.begin(115200, SERIAL_8N1);
   while (!Serial);
   randomSeed(millis());
     
@@ -129,6 +129,11 @@ void adjustPwm(char pin, boolean condition, struct ControlStruct* ctrlStruct) {
   analogWrite(pin, PWM_DUTY[ctrlStruct->currentPwm]); 
 }
 
+void resetLogs() {
+  memPointer = 0;
+  EEPROM_writeAnything(EEPROM_POINTER_IDX, memPointer);      
+}
+
 void writeLog(IncidentLog* ilog) {  
   if(memPointer < MAX_MEM_POINTER) {
     EEPROM_writeAnything(memPointer*sizeof(IncidentLog), *ilog);
@@ -139,9 +144,9 @@ void writeLog(IncidentLog* ilog) {
 }
 
 void logIncident(unsigned long cTime, ControlStruct* ctrl, boolean isAbove, boolean isBelow) {  
-  if( (cTime - ctrl->lastIncident) < TIME_BETWEEN_INCIDENT_LOG )  {
-    return;
-  }
+  if(!systemNeedToOperate()) return;
+  if((cTime - ctrl->lastIncident) < TIME_BETWEEN_INCIDENT_LOG) return;
+  
   if(isAbove || isBelow) {
     ctrl->lastIncident = cTime;
     IncidentLog* ilog = (IncidentLog*) malloc(sizeof(IncidentLog));    
@@ -353,6 +358,18 @@ void handleButtons(dword cTime) {
   }
 }
 
+byte identifyBound(byte value, Range* range) {
+  byte val = 99;
+  boolean isAbove = isAboveLimit(value, range);
+  boolean isBelow = isBelowLimit(value, range);
+  if(isAbove) {
+    val = 1;
+  } else if(isBelow) {
+    val = 0;
+  }
+  return val;
+}
+
 void handleCommunication() {
   if(Serial.available() < 4) {
     return;
@@ -381,18 +398,24 @@ void handleCommunication() {
         }
         case PROT_T_STATUS: {
           byte response = 0;
+          byte bound = PWM_DUTY_MODES;
           switch(msg->data[0]) {
             case LM35: {
-              response = temp.currentPwm;
+              response = temp.currentPwm;              
               break;
             }
             case LDR: {
-              response = light.currentPwm;
+              response = light.currentPwm;              
               break;
-            }            
+            }
+            case LOG_ID: {
+              response = identifyBound(temp.value, &(plants[selectedPlant].temp));              
+              bound = identifyBound(light.value, &(plants[selectedPlant].lux));
+              break;            
+            }
           }
           sendByte(response);
-          sendByte(PWM_DUTY_MODES);
+          sendByte(bound);
           break;
         }
         case PROT_T_HISTORY: {          
@@ -422,6 +445,12 @@ void handleCommunication() {
         case PROT_T_TIME: {
           appClock.h = msg->data[0];
           appClock.m = msg->data[1];
+          break;
+        }
+        case PROT_T_STATUS: {
+          if(msg->data[0] == LOG_ID) {
+            resetLogs();
+          }
           break;
         }
       }      

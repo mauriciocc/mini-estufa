@@ -30,9 +30,9 @@ char* plantName(WORD plantId) {
 char* sensorName(char sensor) {
 	switch(sensor) {
 		case LM35:
-			return "TEMPERATURA";
+			return "Temperatura";
 		case LDR:
-			return "LUMINOSIDADE";
+			return "Luminosidade";
 		default:
 			return "-";
 	}
@@ -86,4 +86,45 @@ void setTimeInfo(HWND dlg, WORD time) {
 	char buf[128];
 	sprintf(buf, "%.2d:%.2d", HIBYTE(time), LOBYTE(time));
 	SetDlgItemTextA(dlg, F_ARD_TIME, buf);
+
+}
+
+void readAndUpdateScreen(HWND hwnd, char* port){
+	SetDlgItemInt(hwnd, F_TEMP, protocolReadVar(port, PROT_T_TEMP, NULL), FALSE);
+	SetDlgItemInt(hwnd, F_LUX, protocolReadVar(port, PROT_T_LUX, NULL), FALSE);
+
+	word currentPlant = protocolReadVar(port, PROT_T_PLANT, NULL);
+	SetDlgItemTextA(hwnd, F_DISPLAY_PLANT, plantName(currentPlant));					
+	syncPlant(currentPlant, hwnd);
+
+	setTimeInfo(hwnd, protocolReadVar(port, PROT_T_TIME, NULL));
+										
+	setPwmStatus(hwnd, protocolReadVar(port, PROT_T_STATUS, LM35), F_FAN);
+	setPwmStatus(hwnd, protocolReadVar(port, PROT_T_STATUS, LDR), F_LED);
+
+	word result = protocolReadVar(port, PROT_T_STATUS, LOG_ID);
+
+	// LOGS
+	WORD size = 0;
+	IncidentLog* logs = protocolReadLogs(port, &size);
+	if(size > 0) {
+		char* message = (char*)malloc(size*128);
+		strcpy(message, "");
+		char buf[1024];
+		for(int i = size - 1; i >= 0; i--) {
+			sprintf(buf, "%.3d - %.2d:%.2d - %s - %s - %s \r\n", 
+				i,
+				logs[i].h, 
+				logs[i].m, 
+				plantName(logs[i].plant),
+				sensorName(logs[i].sensor), 
+				logs[i].bound ? "Acima do limite" : "Abaixo do limite");
+			strcat(message, buf);
+		}
+		SetDlgItemTextA(hwnd, F_LOG_OUTPUT, message);
+		free(message);
+		free(logs);					
+	} else {
+		SetDlgItemTextA(hwnd, F_LOG_OUTPUT, "");
+	}
 }
