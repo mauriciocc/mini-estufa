@@ -89,7 +89,21 @@ void setTimeInfo(HWND dlg, WORD time) {
 
 }
 
-void readAndUpdateScreen(HWND hwnd, char* port){
+char* boundDescription(BYTE bound) {
+	switch (bound)
+	{
+	case 99:
+		return "Dentro do limite";
+	case 1:
+		return "Acima do limite";
+	case 0:
+		return "Abaixo do limite";
+	default:
+		return "-";		
+	}
+
+}
+void readAndUpdateScreen(HWND hwnd, HANDLE port){
 	SetDlgItemInt(hwnd, F_TEMP, protocolReadVar(port, PROT_T_TEMP, NULL), FALSE);
 	SetDlgItemInt(hwnd, F_LUX, protocolReadVar(port, PROT_T_LUX, NULL), FALSE);
 
@@ -103,7 +117,28 @@ void readAndUpdateScreen(HWND hwnd, char* port){
 	setPwmStatus(hwnd, protocolReadVar(port, PROT_T_STATUS, LDR), F_LED);
 
 	word result = protocolReadVar(port, PROT_T_STATUS, LOG_ID);
+	
+	BYTE tempBound = LOBYTE(result);
+	BYTE luxBound = HIBYTE(result);
 
+
+	char buf[1024];		
+	sprintf(buf, "%s -> %s\r\n%s -> %s",
+		sensorName(LM35),
+		boundDescription(tempBound),
+		sensorName(LDR),
+		boundDescription(luxBound)
+	);
+	SetDlgItemTextA(hwnd, F_STATUS, buf);
+	
+	if( tempBound != 99 || luxBound != 99 ){
+	
+	} else {
+		
+	}
+}
+
+void updateLogs(HWND hwnd, HANDLE port) {
 	// LOGS
 	WORD size = 0;
 	IncidentLog* logs = protocolReadLogs(port, &size);
@@ -118,7 +153,8 @@ void readAndUpdateScreen(HWND hwnd, char* port){
 				logs[i].m, 
 				plantName(logs[i].plant),
 				sensorName(logs[i].sensor), 
-				logs[i].bound ? "Acima do limite" : "Abaixo do limite");
+				boundDescription(logs[i].bound)
+				);
 			strcat(message, buf);
 		}
 		SetDlgItemTextA(hwnd, F_LOG_OUTPUT, message);

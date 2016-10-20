@@ -117,6 +117,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 INT_PTR CALLBACK PrincipalProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	static UINT_PTR timer = NULL;
 	static WORD TIMER_ID = 999;
+	static HANDLE serialPort = NULL;
+
 	PAINTSTRUCT ps;
 	HDC hdc;
 		
@@ -133,64 +135,94 @@ INT_PTR CALLBACK PrincipalProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		case WM_COMMAND: {						
 			int event_type = HIWORD(wParam);
 			if(event_type == BN_CLICKED) {
-				char* port = (char*) malloc(32);
-				GetDlgItemTextA(hDlg, F_COM, port, 31);
-
-				if(!isPortAvailable(port)){
-					MessageBoxA(hDlg, 
-						"Não foi possível estabelecer conxão com a porta informada, verifique se o dispositivo esta conectado ao PC e a porta esta configurada corretamente",
-						"Atenção!",
-						MB_ICONWARNING | MB_OK);
-					return TRUE;
-					free(port);
-				}
-
+				
 				int event_id = LOWORD(wParam);
+
+
+				if(event_id == BTN_TOGGLE_CONNECT) {
+					if(serialPort == NULL) {
+						char* port = (char*) malloc(32);
+						GetDlgItemTextA(hDlg, F_COM, port, 31);						
+						serialPort = openPort(port);			
+						free(port);
+						if(serialPort == INVALID_HANDLE_VALUE){
+							MessageBoxA(hDlg, 
+								"Não foi possível estabelecer conxão com a porta informada, verifique se o dispositivo esta conectado ao PC e a porta esta configurada corretamente",
+								"Atenção!",
+								MB_ICONWARNING | MB_OK);
+							return TRUE;
+						}						
+						SetDlgItemTextA(hDlg, BTN_TOGGLE_CONNECT, "Desconectar");
+						EnableWindow(GetDlgItem(hDlg, F_COM), FALSE);
+						event_id = BTN_START_SYNC;
+					} else {
+						CloseHandle(serialPort);
+						serialPort = NULL;
+						SetDlgItemTextA(hDlg, BTN_TOGGLE_CONNECT, "Conectar");
+						EnableWindow(GetDlgItem(hDlg, F_COM), TRUE);	
+						event_id = BTN_STOP_SYNC;
+					}						
+				}
 
 				if(event_id == BTN_START_SYNC) {
 					if(timer == NULL) {
-						timer = SetTimer(hDlg, TIMER_ID, 5000, (TIMERPROC) NULL);
-						EnableWindow(GetDlgItem(hDlg, BTN_START_SYNC), FALSE);
-						EnableWindow(GetDlgItem(hDlg, F_COM), FALSE);
+						timer = SetTimer(hDlg, TIMER_ID, 1000, (TIMERPROC) NULL);
+						EnableWindow(GetDlgItem(hDlg, BTN_START_SYNC), FALSE);						
 						EnableWindow(GetDlgItem(hDlg, BTN_STOP_SYNC), TRUE);
+						
 						timerEvent = TRUE;
 					}
 				}
+
 				if(event_id == BTN_STOP_SYNC) {
 					if(timer != NULL) {
 						KillTimer(hDlg, timer);
 						timer = NULL;
-						EnableWindow(GetDlgItem(hDlg, BTN_START_SYNC), TRUE);
-						EnableWindow(GetDlgItem(hDlg, F_COM), TRUE);
+						EnableWindow(GetDlgItem(hDlg, BTN_START_SYNC), TRUE);						
 						EnableWindow(GetDlgItem(hDlg, BTN_STOP_SYNC), FALSE);
+						return TRUE;
 					}
+				}
+
+				
+
+				if(serialPort == NULL) {
+					MessageBoxA(hDlg, 
+						"Conecte ao dispositivo antes de executar operações!",
+						"Atenção!",
+						MB_ICONWARNING | MB_OK
+						);
+					return TRUE;
 				}
 
 				int plant = processSelectEvent(event_id);
 				BOOLEAN plantChanged = plant >= 0;
 				if(plantChanged) {
-					protocolWriteVar(port, PROT_T_PLANT, plant);
+					protocolWriteVar(serialPort, PROT_T_PLANT, plant);
 				} 
 
 				if(event_id == B_APPLY_TIME) { 
 					char* result = retrieveDateTime(hDlg);													
 					tm* timeStruct = parseDate(result);
 					word timeVal = toWord(timeStruct->tm_hour, timeStruct->tm_min);
-					protocolWriteVar(port, PROT_T_TIME, timeVal);
+					protocolWriteVar(serialPort, PROT_T_TIME, timeVal);
 					free(result);
 					free(timeStruct);
 				}
 
 				if(event_id == B_APPLY_TIME || event_id == B_READ_SENSORS || plantChanged || timerEvent) {					
-					readAndUpdateScreen(hDlg, port);										
+					readAndUpdateScreen(hDlg, serialPort);										
+					updateLogs(hDlg, serialPort);
+				}
+
+				if(event_id == BTN_READ_LOGS) {
+					updateLogs(hDlg, serialPort);
 				}
 
 				if(event_id == BTN_CLEAR_LOGS) {
-					protocolWriteVar(port, PROT_T_STATUS, LOG_ID);
+					protocolWriteVar(serialPort, PROT_T_STATUS, LOG_ID);
 					SetDlgItemTextA(hDlg, F_LOG_OUTPUT, "");
 				}
-
-				free(port);
 			}		
 
 			break;

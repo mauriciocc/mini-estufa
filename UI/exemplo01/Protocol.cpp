@@ -140,9 +140,7 @@ ProtocolData* createMsg(BYTE header, BYTE type, char* msg, short size) {
 	return data;
 }
 
-word protocolReadVar(char* port, byte var, word value) {
-
-	HANDLE h = openPort(port);
+word protocolReadVar(HANDLE h, byte var, word value) {
 
 	char vals[1] = {NULL};
 	short size = 0;
@@ -156,25 +154,18 @@ word protocolReadVar(char* port, byte var, word value) {
 	free(data);
 
 	word val = receiveWord(h);	
-
-	CloseHandle(h);
-
+	
 	return val;
 }
 
-void protocolWriteVar(char* port, byte var, word value) {
-	HANDLE h = openPort(port);
-		
+void protocolWriteVar(HANDLE h, byte var, word value) {		
 	char vals[] = {LOBYTE(value), HIBYTE(value)};
 	ProtocolData* data = createMsg(PROT_WRITE, var,  vals, 2);
 	sendMsg(data, h);
 	free(data);
-
-	CloseHandle(h);
 }
 
-IncidentLog* protocolReadLogs(char* port, WORD* size) {
-	HANDLE h = openPort(port);
+IncidentLog* protocolReadLogs(HANDLE h, WORD* size) {	
 
 	ProtocolData* data = createMsg(PROT_READ, PROT_T_HISTORY, NULL, 0);
 	sendMsg(data, h);
@@ -189,8 +180,6 @@ IncidentLog* protocolReadLogs(char* port, WORD* size) {
 		DWORD NoBytesRead;	
 		ReadFile(h, values, rSize, &NoBytesRead, NULL);  
 	}
-
-	CloseHandle(h);	
 
 	return values;
 }

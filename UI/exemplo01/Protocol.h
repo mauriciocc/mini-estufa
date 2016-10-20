@@ -35,8 +35,9 @@ typedef struct IncidentLog {
   byte bound;    
 } IncidentLog;
 
+HANDLE openPort(char* port);
 BOOLEAN isPortAvailable(char* port);
 WORD toWord(BYTE b1, BYTE b2);
-word protocolReadVar(char* port, byte var, word value);
-void protocolWriteVar(char* port, byte var, word value);
-IncidentLog* protocolReadLogs(char* port, WORD* size);
+word protocolReadVar(HANDLE port, byte var, word value);
+void protocolWriteVar(HANDLE port, byte var, word value);
+IncidentLog* protocolReadLogs(HANDLE port, WORD* size);

@@ -101,11 +101,11 @@ void maxMin(struct ControlStruct* ctrlStruct) {
     } 
 }
 
-boolean isAboveLimit(int val, struct Range* limit) {
+boolean isAboveLimit(word val, struct Range* limit) {
   return val > limit->maxVal;
 }
 
-boolean isBelowLimit(int val, struct Range* limit) {
+boolean isBelowLimit(word val, struct Range* limit) {
   return val < limit->minVal;
 }
 
@@ -139,7 +139,7 @@ void writeLog(IncidentLog* ilog) {
     EEPROM_writeAnything(memPointer*sizeof(IncidentLog), *ilog);
     memPointer++;
     EEPROM_writeAnything(EEPROM_POINTER_IDX, memPointer);      
-    Serial.println("Writing Log " + String(memPointer) + " - " + String(EEPROM.length()));  
+    //Serial.println("Writing Log " + String(memPointer) + " - " + String(EEPROM.length()));  
   }
 }
 
@@ -358,7 +358,7 @@ void handleButtons(dword cTime) {
   }
 }
 
-byte identifyBound(byte value, Range* range) {
+byte identifyBound(word value, Range* range) {
   byte val = 99;
   boolean isAbove = isAboveLimit(value, range);
   boolean isBelow = isBelowLimit(value, range);
@@ -457,7 +457,8 @@ void handleCommunication() {
       break;
     }
   } 
-    freeMsg(msg);    
+  
+  freeMsg(msg);    
   
 }
 void loop() {
