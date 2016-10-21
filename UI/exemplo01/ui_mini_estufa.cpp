@@ -165,7 +165,7 @@ INT_PTR CALLBACK PrincipalProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 				}
 
 				if(event_id == BTN_START_SYNC) {
-					if(timer == NULL) {
+					if(serialPort != NULL && timer == NULL) {
 						timer = SetTimer(hDlg, TIMER_ID, 1000, (TIMERPROC) NULL);
 						EnableWindow(GetDlgItem(hDlg, BTN_START_SYNC), FALSE);						
 						EnableWindow(GetDlgItem(hDlg, BTN_STOP_SYNC), TRUE);
